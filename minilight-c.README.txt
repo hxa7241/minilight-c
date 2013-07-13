@@ -1,0 +1,102 @@
+
+
+MiniLight 1.6 C
+======================================================================
+
+
+Harrison Ainsworth / HXA7241 : 2009, 2011, 2013  
+http://www.hxa.name/minilight
+
+2013-05-04
+2011-01-30
+2009-06-14
+
+
+
+
+Contents
+--------
+
+* Description
+* Installation
+* Usage
+* Building
+* Acknowledgements
+
+
+
+
+Description
+-----------
+
+MiniLight is a minimal global illumination renderer. See the main MiniLight
+readme for a general description.
+
+
+
+
+Installation
+------------
+
+### Requirements ###
+
+* MacOS 10.5, or Windows 2000/XP, or GNU/Linux 2010ish, or later
+
+
+### Guide ###
+
+Simply copy the minilight-c [mac|lin|win.exe] executable file to wherever.
+
+The program reads the model file given and creates and writes the image file
+requested; nothing else is touched.
+
+
+
+
+Usage
+-----
+
+This version has a command-line option to generate Radiance RGBE images instead
+of PPM P6 images: just add -hdri before the model file name.
+
+
+
+
+Building
+--------
+
+It is an ordinary simple build. There are no special requirements or
+dependencies: everything needed is in the supplied archive (assuming the normal build environment and tools are already prepared).
+
+However, LLVM-Clang invocation might vary so the build script might need
+adjusting.
+
+Choose a build script:
+* Mac:     make/build-mac.sh (for LLVM-GCC 4.2 or GCC 4)
+* Linux:   make/build-linux.sh (for Clang 3.0 or GCC 4)
+* Windows: make\build-windows.bat (for MS VC++ 2008 or 2005)
+
+Run scripts from the 'c' directory.
+
+Appendix:
+The code uses double-precision FP and is for 64-bit builds. Changing either the
+FP to single-precision or the build to 32-bit probably means it would be best
+to change the other too.
+
+
+
+
+Acknowledgements
+----------------
+
+### implementations, tools ###
+
+* LLVM-GCC 4.2 / Clang 3.0 compiler (on Mac OS X and Ubuntu GNU/Linux)  
+  http://llvm.org/  
+  http://clang.llvm.org/
+* GCC 4 compiler (on Mac OS X and Ubuntu GNU/Linux)  
+  http://gcc.gnu.org/
+* MS Visual C++ 2008 and 2005 compiler (on Microsoft Windows XP and 2000)  
+  http://www.microsoft.com/express/vc/
+* UPX 3.03 - the Ultimate Packer for eXecutables (on Windows)  
+  http://upx.sourceforge.net/
