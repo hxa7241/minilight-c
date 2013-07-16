@@ -1,6 +1,6 @@
 
 
-MiniLight 1.6
+MiniLight 1.7
 ======================================================================
 
 
@@ -60,6 +60,7 @@ See the translation-specific readmes for installation and build information.
 * Octree spatial index
 * Pin-hole 'lens'
 * Ward linear tone-mapping
+* Process-level parallelism and distribution
 
 
 
@@ -69,6 +70,8 @@ Usage
 
 * Running
 * Model format
+* Parallelism / Distribution
+* Tone-mapping
 
 
 ### Running ###
@@ -133,6 +136,52 @@ forwards.
 * Triangle front face has clock-wise vertexes.
 * Triangles are reflective (therefore visible) on both faces, but emissive on
 the front face only.
+
+
+### Parallelism / Distribution ###
+
+MiniLight supports process-level parallelism and distribution by allowing
+separate renders to be accumulated.
+
+Each image render is individually seeded random-wise. And each image contains a
+note of its iterations total. This allows multiple minilight processes to be
+run, of any translation and perhaps at different times and places, and the
+resulting images accumulated into one.
+
+Use the minilightmerge supplementary tool to accumulate renders. (All images
+must be the same size (and all RGBE)):
+
+   minilightmerge imageFilePathName imageFilePathName ...
+
+Some translations have a parallelism limitation: multiple processes should be
+started at least a second apart. This is because they are seeded from Unix
+time; others seeded from a UUID should be OK.
+* C tries to use a UUID (from uuidgen) but falls back on Unix time.
+* Scala and Python use a UUID.
+* OCaml, Scheme, Lua, C++, and Ruby use Unix time.
+
+However, accumulating a lot of images with some being identical because of
+clashing seeds is not very harmful, just inefficient. The more identical
+images, the less accumulating will actually do anything, and just leave you
+with what you began with: a duplication of effort.
+
+Accumulation is just a weighted average. Scale the pixels by the iterations,
+sum all such scaled images, then divide the sum image by the total iterations:
+   ((image1 * iterations1) + (image2 * iterations2) + ... ) /
+   (iterations1 + iterations2 + ... )
+
+
+### Tone-mapping ###
+
+Use the minilighttone supplementary tool to convert RGBE images to PPM:
+
+   minilighttone [-d displayLuminanceMax] imageFilePathName
+
+-d : display luminance max [int pos] (optional)
+
+The input RGBE file must be non-RLE. The output PPM file is a P6 24-bit.
+The tone-mapping is just the simple Ward linear one from:
+  'A Contrast Based Scalefactor For Luminance Display'; Ward; 1994.
 
 
 
@@ -206,7 +255,8 @@ Acknowledgements
 
 * Vim text editor  
   http://www.vim.org/
-* various GNU things
+* various GNU things  
+  http://www.gnu.org/
 
 
 

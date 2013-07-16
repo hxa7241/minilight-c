@@ -8,8 +8,10 @@
 ------------------------------------------------------------------------------*/
 
 
-/*#include <time.h>
-#include <stdio.h>*/
+#define _POSIX_C_SOURCE 2
+
+#include <time.h>
+#include <stdio.h>
 
 #include "Random.h"
 
@@ -22,96 +24,82 @@
 static const int32u SEED = 987654321;
 
 /* minimum seeds */
-/*static const int32u SEED_MINS[4] = { 2, 8, 16, 128 };*/
+static const int32u SEED_MINS[4] = { 2, 8, 16, 128 };
 
 
 
 
 /* implementation ----------------------------------------------------------- */
 
-/*static void getSeed
+static void getSeed
 (
    int32u seed[4]
 )
 {
-   // try to get 'non-determinate' seed //
+   /* try to get 'non-determinate' seed */
 
-   // UUID //
+   /* UUID */
    bool isUuid = false;
    {
       int32u a[8], sc, i;
       FILE* pPf = popen( "uuidgen", "r" );
 
-      // read in chunks of 16-bits (dodging '-'s) //
+      /* read in chunks of 16-bits (dodging '-'s) */
       sc = fscanf( pPf, "%4x%4x%*c%4x%*c%4x%*c%4x%*c%4x%4x%4x",
          &a[7], &a[6], &a[5], &a[4], &a[3], &a[2], &a[1], &a[0] );
 
-      // check it worked //
+      /* check it worked */
       isUuid = !pclose( pPf ) && (sc == 8);
       if( isUuid )
       {
-         // merge into chunks of 32-bits //
+         /* merge into chunks of 32-bits */
          for( i = 4;  i--;  seed[i] = (a[i * 2 + 1] << 16) | a[i * 2] ) {}
       }
    }
 
-   // else time //
+   /* else time */
    if( !isUuid )
    {
-      // probably Unix time -- signed 32-bit, seconds since 1970 //
+      /* probably Unix time -- signed 32-bit, seconds since 1970 */
       const time_t t = time(0);
 
-      // check time sufficient (probably) and available //
+      /* check time sufficient (probably) and available */
       if( (sizeof(time_t) >= 4) && (t != -1) )
       {
-         // rotate to make frequently changing bits more significant //
+         /* rotate to make frequently changing bits more significant */
          const int32u tu = ((int32u)t << 8) | ((int32u)t >> 24);
          seed[0] = seed[1] = seed[2] = seed[3] = tu;
       }
    }
-}*/
+}
 
 
 
 
 /* initialisation ----------------------------------------------------------- */
 
-/*Random RandomCreate()
+Random RandomCreate()
 {
    Random r;
 
-   // get seed //
+   /* get seed */
    int32u seed[4] = { 0, 0, 0, 0 };
    getSeed( seed );
 
-   // init state from seed //
+   /* init state from seed */
    {
       int i;
-      // *** VERY IMPORTANT ***
+      /* *** VERY IMPORTANT ***
          The initial seeds z1, z2, z3, z4  MUST be larger
-         than 1, 7, 15, and 127 respectively. //
+         than 1, 7, 15, and 127 respectively. */
       for( i = 4;  i--; )
       {
          r.state[i] = (seed[i] >= SEED_MINS[i]) ? seed[i] : SEED;
       }
    }
 
-   // store seed/id as 8 digit hex number string //
+   /* store seed/id as 8 digit hex number string */
    sprintf( r.sId, "%08X", r.state[3] & 0xFFFFFFFFu );
-
-   return r;
-}*/
-
-
-Random RandomCreate()
-{
-   Random r;
-
-   /* *** VERY IMPORTANT ***
-      The initial seeds z1, z2, z3, z4  MUST be larger
-      than 1, 7, 15, and 127 respectively. */
-
-   r.state[0] = r.state[1] = r.state[2] = r.state[3] = SEED;
 
    return r;
 }
@@ -199,10 +187,10 @@ real64 RandomReal64
 }*/
 
 
-/*const char* RandomGetId
+const char* RandomGetId
 (
    Random* pR
 )
 {
    return pR->sId;
-}*/
+}

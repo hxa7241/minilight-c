@@ -22,15 +22,7 @@
 
 
 /**
- * Pixel sheet with simple tone-mapping and file formatting.<br/><br/>
- *
- * Uses Ward simple tonemapper:
- * <cite>'A Contrast Based Scalefactor For Luminance Display';
- * Ward;
- * Graphics Gems 4, AP; 1994.</cite><br/><br/>
- *
- * Uses PPM image format:
- * <cite>http://netpbm.sourceforge.net/doc/ppm.html</cite><br/><br/>
+ * Pixel sheet with file formatting.<br/><br/>
  *
  * Uses RGBE image format:
  * <cite>http://radsite.lbl.gov/radiance/refer/filefmts.pdf</cite>
@@ -48,9 +40,8 @@ struct Image
 {
    int32     width;
    int32     height;
-   Vector3f* aPixels;
 
-   bool      isHdri;
+   Vector3f* aPixels;
 };
 
 typedef struct Image Image;
@@ -63,8 +54,7 @@ typedef struct Image Image;
 Image* ImageConstruct
 (
    FILE*   pIn,
-   jmp_buf jmpBuf,
-   bool    isHdri
+   jmp_buf jmpBuf
 );
 
 void ImageDestruct

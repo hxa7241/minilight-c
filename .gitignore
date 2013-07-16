@@ -1,12 +1,14 @@
 .DS_Store
 .hg*
-/.hg
+.hg/
 
-/_dev
-/temp
-/obj
+**/_dev/
+**/temp/
+**/obj/
 
 *.ppm
 *.rgbe
 
 minilight-c
+minilightmerge-c
+minilighttone-c

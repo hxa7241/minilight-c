@@ -38,7 +38,7 @@
 /* user messages ------------------------------------------------------------ */
 
 /* elements */
-static const char TITLE[]  = "MiniLight 1.6 C";
+static const char TITLE[]  = "MiniLight 1.7 C";
 static const char AUTHOR[] = "Harrison Ainsworth / HXA7241 : 2009, 2011, 2013";
 static const char URL[]    = "http://www.hxa.name/minilight";
 static const char DATE[]   = "2013-05-04";
@@ -48,7 +48,7 @@ static const char DESCRIPTION[] =
 "MiniLight is a minimal global illumination renderer.";
 static const char USAGE[] =
 "usage:\n"
-"  minilight [-hdri] modelFilePathName\n"
+"  minilight modelFilePathName\n"
 "\n"
 "The model text file format is:\n"
 "  #MiniLight\n"
@@ -66,7 +66,7 @@ static const char USAGE[] =
 "\n"
 "- where iterations and image values are integers, viewangle is a real,\n"
 "and all other values are three parenthised reals. The file must end\n"
-"with a newline. E.g.:\n";
+"with a newline. For example:\n";
 static const char EXAMPLE[] =
 "  #MiniLight\n"
 "\n"
@@ -133,17 +133,16 @@ static void makeRenderingObjects
    FILE* pModelFile;
    const char* sModelFilePathname = 0;
 
-   const bool isHdri = !strcmp( argv[1], "-hdri" );
-
    /* make random generator */
    *pRandom_o = RandomCreate();
 
    /* get/make file names */
-   sModelFilePathname = argv[isHdri ? 2 : 1];
+   sModelFilePathname = argv[ 1 ];
    *psImageFilePathname_o = (char*)throwAllocExceptions( jmpBuf,
-      calloc( strlen(sModelFilePathname) + 6, sizeof(char) ) );
+      calloc( strlen(sModelFilePathname) + 15, sizeof(char) ) );
    strcpy( *psImageFilePathname_o, sModelFilePathname );
-   strcat( *psImageFilePathname_o, isHdri ? ".rgbe" : ".ppm" );
+   strcat( strcat( *psImageFilePathname_o, "." ), RandomGetId( pRandom_o ) );
+   strcat( *psImageFilePathname_o, ".rgbe" );
 
    /* open model file */
    pModelFile = fopen( sModelFilePathname, "r" );
@@ -169,7 +168,7 @@ static void makeRenderingObjects
    *pIterations_o = *pIterations_o < 0 ? 0 : *pIterations_o;
 
    /* create main rendering objects, from model file */
-   *ppImage_o = ImageConstruct( pModelFile, jmpBuf, isHdri );
+   *ppImage_o = ImageConstruct( pModelFile, jmpBuf );
    *pCamera_o = CameraCreate( pModelFile, jmpBuf );
    *ppScene_o = SceneConstruct( pModelFile, jmpBuf,
       &CameraEyePoint( pCamera_o ) );
@@ -273,6 +272,8 @@ int main
 
          makeRenderingObjects( jmpBuf, argv, &random, &sImageFilePathname,
             &iterations, &pImage, &camera, &pScene );
+
+         printf( "output: %s\n", sImageFilePathname );
 
          renderProgressively( jmpBuf, iterations, &camera, pScene, &random,
             sImageFilePathname, pImage );

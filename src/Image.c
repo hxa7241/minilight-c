@@ -23,15 +23,6 @@
 /* image file comment */
 static const char MINILIGHT_URI[] = "http://www.hxa.name/minilight";
 
-/* guess of average screen maximum brightness */
-static const real64 DISPLAY_LUMINANCE_MAX = 200.0;
-
-/* ITU-R BT.709 standard RGB luminance weighting */
-static const Vector3f RGB_LUMINANCE = {{ 0.2126, 0.7152, 0.0722 }};
-
-/* ITU-R BT.709 standard gamma */
-static const real64 GAMMA_ENCODE = 0.45;
-
 
 
 
@@ -78,142 +69,6 @@ static int32u toRgbe
 }
 
 
-/**
- * Calculate tone-mapping scaling factor.
- */
-static real64 calculateToneMapping
-(
-   const Image* pI,
-   const real64 divider
-)
-{
-   /* calculate estimate of world-adaptation luminance
-      as log mean luminance of scene */
-   real64 adaptLuminance = 1e-4;
-   {
-      real64 sumOfLogs = 0.0;
-      int32 i;
-      for( i = (pI->width * pI->height);  i-- > 0; )
-      {
-         const real64 Y = Vector3fDot( &pI->aPixels[i], &RGB_LUMINANCE ) *
-            divider;
-         /* clamp luminance to a perceptual minimum */
-         sumOfLogs += log10( Y > 1e-4 ? Y : 1e-4 );
-      }
-
-      adaptLuminance = pow( 10.0, sumOfLogs /
-         (real64)(pI->width * pI->height) );
-   }
-
-   /* make scale-factor from:
-      ratio of minimum visible differences in luminance, in display-adapted
-      and world-adapted perception (discluding the constant that cancelled),
-      divided by display max to yield a [0,1] range */
-   {
-      const real64 a = 1.219 + pow( DISPLAY_LUMINANCE_MAX * 0.25, 0.4 );
-      const real64 b = 1.219 + pow( adaptLuminance, 0.4 );
-
-      return pow( a / b, 2.5 ) / DISPLAY_LUMINANCE_MAX;
-   }
-}
-
-
-static void ImageFormattedRgbe
-(
-   const Image* pI,
-   const real64 divider,
-   jmp_buf      jmpBuf,
-   FILE*        pOut_o
-)
-{
-   /* write Radiance RGBE format */
-
-   /* write header */
-   {
-      /* write ID */
-      throwWriteExceptions( pOut_o, jmpBuf,
-         fprintf( pOut_o, "#?RADIANCE\n" ) );
-
-      /* write other header things */
-      throwWriteExceptions( pOut_o, jmpBuf,
-         fprintf( pOut_o, "FORMAT=32-bit_rgbe\n" ) );
-      throwWriteExceptions( pOut_o, jmpBuf,
-         fprintf( pOut_o, "SOFTWARE=%s\n\n", MINILIGHT_URI ) );
-
-      /* write width, height */
-      throwWriteExceptions( pOut_o, jmpBuf,
-         fprintf( pOut_o, "-Y %i +X %i\n", pI->height, pI->width ) );
-   }
-
-   /* write pixels */
-   {
-      int32 i, b;
-      for( i = 0;  i < (pI->width * pI->height);  ++i )
-      {
-         const Vector3f pd   = Vector3fMulF( &pI->aPixels[i], divider );
-         const int32u   rgbe = toRgbe( &pd );
-
-         /* write rgbe bytes */
-         for( b = 4;  b-- > 0; )
-         {
-            throwWriteExceptions( pOut_o, jmpBuf,
-               fprintf( pOut_o, "%c", (byteu)((rgbe >> (b * 8)) & 0xFFu) ) );
-         }
-      }
-   }
-}
-
-
-static void ImageFormattedPpm
-(
-   const Image* pI,
-   const real64 divider,
-   jmp_buf      jmpBuf,
-   FILE*        pOut_o
-)
-{
-   const real64 tonemapScaling = calculateToneMapping( pI, divider );
-
-   /* write PPM P6 format */
-
-   /* write header */
-   {
-      /* write ID and comment */
-      throwWriteExceptions( pOut_o, jmpBuf,
-         fprintf( pOut_o, "P6\n# %s\n\n", MINILIGHT_URI ) );
-
-      /* write width, height, maxval */
-      throwWriteExceptions( pOut_o, jmpBuf,
-         fprintf( pOut_o, "%i %i\n%i\n", pI->width, pI->height, 255 ) );
-   }
-
-   /* write pixels */
-   {
-      int32 i, c;
-      for( i = 0;  i < (pI->width * pI->height);  ++i )
-      {
-         for( c = 0;  c < 3;  ++c )
-         {
-            /* tonemap */
-            const real64 mapped = pI->aPixels[i].xyz[c] * divider *
-               tonemapScaling;
-
-            /* gamma encode */
-            const real64 gammaed = pow( (mapped > 0.0 ? mapped : 0.0),
-               GAMMA_ENCODE );
-
-            /* quantize */
-            const real64 quantized = floor( (gammaed * 255.0) + 0.5 );
-
-            /* output as byte */
-            throwWriteExceptions( pOut_o, jmpBuf, fprintf( pOut_o, "%c",
-               (byteu)(quantized <= 255.0 ? quantized : 255.0) ) );
-         }
-      }
-   }
-}
-
-
 
 
 /* initialisation ----------------------------------------------------------- */
@@ -221,8 +76,7 @@ static void ImageFormattedPpm
 Image* ImageConstruct
 (
    FILE*   pIn,
-   jmp_buf jmpBuf,
-   bool    isHdri
+   jmp_buf jmpBuf
 )
 {
    Image* pI = (Image*)throwAllocExceptions( jmpBuf,
@@ -241,8 +95,6 @@ Image* ImageConstruct
    /* allocate pixels */
    pI->aPixels = (Vector3f*)throwAllocExceptions( jmpBuf,
       calloc( pI->width * pI->height, sizeof(Vector3f) ) );
-
-   pI->isHdri = isHdri;
 
    return pI;
 }
@@ -295,12 +147,41 @@ void ImageFormatted
 {
    const real64 divider = 1.0 / (real64)(iteration >= 1 ? iteration : 1);
 
-   if( pI->isHdri )
+   /* write Radiance RGBE format */
+
+   /* write header */
    {
-      ImageFormattedRgbe( pI, divider, jmpBuf, pOut_o );
+      /* write ID */
+      throwWriteExceptions( pOut_o, jmpBuf,
+         fprintf( pOut_o, "#?RADIANCE\n" ) );
+
+      /* write other header things */
+      throwWriteExceptions( pOut_o, jmpBuf,
+         fprintf( pOut_o, "FORMAT=32-bit_rgbe\n" ) );
+      throwWriteExceptions( pOut_o, jmpBuf,
+         fprintf( pOut_o, "SOFTWARE=%s\n", MINILIGHT_URI ) );
+      throwWriteExceptions( pOut_o, jmpBuf,
+         fprintf( pOut_o, "ITERATION=%i\n\n", iteration ) );
+
+      /* write width, height */
+      throwWriteExceptions( pOut_o, jmpBuf,
+         fprintf( pOut_o, "-Y %i +X %i\n", pI->height, pI->width ) );
    }
-   else
+
+   /* write pixels */
    {
-      ImageFormattedPpm( pI, divider, jmpBuf, pOut_o );
+      int32 i, b;
+      for( i = 0;  i < (pI->width * pI->height);  ++i )
+      {
+         const Vector3f pd   = Vector3fMulF( &pI->aPixels[i], divider );
+         const int32u   rgbe = toRgbe( &pd );
+
+         /* write rgbe bytes */
+         for( b = 4;  b-- > 0; )
+         {
+            throwWriteExceptions( pOut_o, jmpBuf,
+               fprintf( pOut_o, "%c", (byteu)((rgbe >> (b * 8)) & 0xFFu) ) );
+         }
+      }
    }
 }

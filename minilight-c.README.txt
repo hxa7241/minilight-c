@@ -1,6 +1,6 @@
 
 
-MiniLight 1.6 C
+MiniLight 1.7 C
 ======================================================================
 
 
@@ -19,7 +19,6 @@ Contents
 
 * Description
 * Installation
-* Usage
 * Building
 * Acknowledgements
 
@@ -50,14 +49,7 @@ Simply copy the minilight-c [mac|lin|win.exe] executable file to wherever.
 The program reads the model file given and creates and writes the image file
 requested; nothing else is touched.
 
-
-
-
-Usage
------
-
-This version has a command-line option to generate Radiance RGBE images instead
-of PPM P6 images: just add -hdri before the model file name.
+(Similarly for the supplementary tools: minilightmerge and minilighttone.)
 
 
 
@@ -65,23 +57,24 @@ of PPM P6 images: just add -hdri before the model file name.
 Building
 --------
 
-It is an ordinary simple build. There are no special requirements or
-dependencies: everything needed is in the supplied archive (assuming the normal build environment and tools are already prepared).
+There are three separate builds, one for each program: minilight,
+minilightmerge, and minilighttone. Each is an ordinary simple build. There are
+no special requirements or dependencies: everything needed is in the supplied
+archive (assuming the normal build environment and tools are already prepared).
 
 However, LLVM-Clang invocation might vary so the build script might need
 adjusting.
 
-Choose a build script:
+For each build, move to the base directory -- c, merge-tool, or tone-tool --
+then choose and run a build script according to platform:
 * Mac:     make/build-mac.sh (for LLVM-GCC 4.2 or GCC 4)
 * Linux:   make/build-linux.sh (for Clang 3.0 or GCC 4)
 * Windows: make\build-windows.bat (for MS VC++ 2008 or 2005)
 
-Run scripts from the 'c' directory.
-
 Appendix:
 The code uses double-precision FP and is for 64-bit builds. Changing either the
-FP to single-precision or the build to 32-bit probably means it would be best
-to change the other too.
+FP use to single-precision or the build to 32-bit probably means it would be
+best, for execution speed, to change the other too.
 
 
 

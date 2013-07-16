@@ -33,7 +33,7 @@
 struct Random
 {
    int32u state[4];
-   /*char   sId[9];*/
+   char   sId[9];
 };
 
 typedef struct Random Random;
@@ -85,10 +85,10 @@ real64 RandomReal64
 /**
  * Get original seed / id, as 8 digit/char hex number string.
  */
-/*const char* RandomGetId
+const char* RandomGetId
 (
    Random*
-);*/
+);
 
 
 
